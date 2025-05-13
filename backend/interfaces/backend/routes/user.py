@@ -2,7 +2,6 @@
 from flask import Blueprint, jsonify, request
 from models.user import User
 from middleware.jwt import token_required
-from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
 
 user_bp = Blueprint('user', __name__)
