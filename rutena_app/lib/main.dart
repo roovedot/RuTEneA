@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rutena_app/dashboard.dart';
 import 'package:rutena_app/login.dart';
 import 'package:rutena_app/register.dart';
-import 'package:rutena_app/crearEvento.dart';
+import 'package:rutena_app/crear_evento.dart';
 
 void main() {
   runApp(const MainApp());
