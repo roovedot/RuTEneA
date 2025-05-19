@@ -1,0 +1,21 @@
+Registrar un usuario
+curl http://127.0.0.1:5000/auth/register -X POST -H "Content-Type: application/json" --data '{"nombre":"dpm","email":"dpm@gmail.com","password":"dpm"}'
+
+Loggearse con usuario
+curl http://127.0.0.1:5000/auth/login -X POST -H "Content-Type: application/json" --data '{"email":"dpm@gmail.com","password":"dpm"}'
+
+Crear evento 
+curl -X POST http://localhost:5000/event/event -H "Content-Type: application/json" -H "Authorization: Bearer $(cat /tmp/token)" --data '{"nombre_evento" : "Bruh", "fecha_evento" : "2004-11-09"}
+
+Ver eventos del usuario
+curl -X GET http://localhost:5000/event/events -H "Authorization: Bearer $(cat /tmp/token)"
+
+Ver todos los eventos de la DB
+curl -X GET http://localhost:5000/event/all_events -H "Authorization: Bearer $(cat /tmp/token)"
+
+Ver infromación de un evento
+curl -X GET http://localhost:5000/event/event/1 -H "Authorization: Bearer $(cat /tmp/token)"
+
+Actualizar evento
+curl -X PUT http://localhost:5000/event/event/1 -H "Authorization: Bearer $(cat /tmp/token)" -H "Content-Type: application/json" --data '{"nombre_evento":"bruh"}'
+
