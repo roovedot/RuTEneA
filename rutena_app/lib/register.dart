@@ -1,7 +1,64 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
+
+  @override
+  _RegisterPageState createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  // Controladores para capturar texto
+  final TextEditingController nombreController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  bool isLoading = false;
+  String? errorMessage;
+
+  Future<void> registerUser() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    final url = Uri.parse('http://127.0.0.1:5000/auth/register');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'nombre': nombreController.text.trim(),
+        'email': emailController.text.trim(),
+        'password': passwordController.text.trim(),
+      }),
+    );
+
+    setState(() {
+      isLoading = false;
+    });
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      // Registro exitoso
+      // Puedes redirigir al login, o mostrar mensaje
+      Navigator.pushReplacementNamed(context, '/login');
+    } else {
+      // Mostrar error
+      setState(() {
+        errorMessage = 'Error en el registro: ${response.body}';
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    // Limpiar controladores para evitar memory leaks
+    nombreController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,48 +112,7 @@ class RegisterPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Apellido
-                      const Text(
-                        'Apellido',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Nombre de Usuario
-                      const Text(
-                        'Nombre de Usuario',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
+                        controller: nombreController,
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.white,
@@ -118,6 +134,8 @@ class RegisterPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       TextField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.white,
@@ -139,6 +157,7 @@ class RegisterPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       TextField(
+                        controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
                           filled: true,
@@ -151,11 +170,20 @@ class RegisterPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
 
+                      // Mostrar error si hay
+                      if (errorMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(
+                            errorMessage!,
+                            style: const TextStyle(color: Colors.red),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+
                       // Botón Registrarse
                       ElevatedButton(
-                        onPressed: () {
-                          // Acción de registro
-                        },
+                        onPressed: isLoading ? null : registerUser,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -163,13 +191,17 @@ class RegisterPage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text(
-                          'Registrarse',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        child: isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                'Registrarse',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 16),
 

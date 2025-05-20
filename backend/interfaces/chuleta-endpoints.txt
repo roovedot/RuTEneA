@@ -21,3 +21,6 @@ curl -X GET http://localhost:5000/event/event/1 -H "Authorization: Bearer $(cat 
 Actualizar evento
 curl -X PUT http://localhost:5000/event/event/1 -H "Authorization: Bearer $(cat /tmp/token)" -H "Content-Type: application/json" --data '{"nombre_evento":"bruh"}'
 
+// Coger el token para usar en una página (lo guarda en una variable token)
+final prefs = await SharedPreferences.getInstance();
+final token = prefs.getString('jwt_token');
