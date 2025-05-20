@@ -1,3 +1,5 @@
+Levantar API -> python3 RuTEneA/backend/interfaces/backend/app.py
+
 Registrar un usuario
 curl http://127.0.0.1:5000/auth/register -X POST -H "Content-Type: application/json" --data '{"nombre":"dpm","email":"dpm@gmail.com","password":"dpm"}'
 
