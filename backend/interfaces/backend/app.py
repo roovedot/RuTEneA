@@ -5,6 +5,7 @@ from routes.user import user_bp
 from routes.event import event_bp
 from middleware.jwt import SECRET_KEY
 from db import db
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 
@@ -13,6 +14,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = SECRET_KEY
 
 db.init_app(app)
+
+migrate = Migrate(app, db) 
 
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(user_bp, url_prefix='/user')

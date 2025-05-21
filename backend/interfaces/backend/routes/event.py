@@ -1,29 +1,25 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
-from models.event import Event  # Importar el modelo Event
+from models.event import Event  
 from db import db
 from middleware.jwt import token_required
 
-# Crear el Blueprint para las rutas de eventos
 event_bp = Blueprint('event', __name__)
 
-# Ruta para obtener todos los eventos
 @event_bp.route('/all_events', methods=['GET'])
-@token_required  # Esto asegurará que solo usuarios autenticados puedan acceder
+@token_required  
 def get_events(user_id):
-    events = Event.query.all()  # Obtener todos los eventos
+    events = Event.query.all()  
 
-    # Crear una lista de diccionarios con los datos necesarios
     eventos_data = [
         {
             'nombre_evento': event.nombre_evento,
-            'fecha_evento': event.fecha_evento.strftime('%Y-%m-%d %H:%M:%S'),  # Formatear la fecha a string
+            'fecha_evento': event.fecha_evento.strftime('%Y-%m-%d %H:%M:%S'), 
             'user_id': event.user_id
         }
         for event in events
     ]
 
-    # Retornar la lista de eventos con los campos deseados
     return jsonify(eventos_data), 200
 
 @event_bp.route('/events', methods=['GET'])
@@ -75,6 +71,7 @@ def create_event(user_id):
 
     nuevo_evento = Event(
         nombre_evento=data['nombre_evento'],
+        icon=data['icon'],
         fecha_evento=fecha_evento,
         user_id=user_id  # Usar el user_id del token
     )
@@ -87,6 +84,7 @@ def create_event(user_id):
         'evento': {
             'nombre_evento': nuevo_evento.nombre_evento,
             'fecha_evento': nuevo_evento.fecha_evento,
+            'icon' : nuevo_evento.icon,
             'user_id': nuevo_evento.user_id
         }
     }), 201
@@ -95,26 +93,20 @@ def create_event(user_id):
 @event_bp.route('/event/<int:event_id>', methods=['PUT'])
 @token_required
 def update_event(user_id, event_id):
-    # Obtener el evento de la base de datos por su ID
     event = Event.query.get_or_404(event_id)
 
-    # Validar que el evento pertenece al usuario autenticado
     if event.user_id != user_id:
         return jsonify({'message': 'No tienes permiso para actualizar este evento.'}), 403
 
-    # Obtener los datos enviados en el cuerpo de la solicitud
     data = request.get_json()
 
-    # Actualizar los campos del evento si se proporcionan nuevos datos
     if 'nombre_evento' in data:
         event.nombre_evento = data['nombre_evento']
     if 'fecha_evento' in data:
         event.fecha_evento = data['fecha_evento']
 
-    # Guardar los cambios en la base de datos
     db.session.commit()
 
-    # Retornar la respuesta con los detalles del evento actualizado
     return jsonify({
         'message': 'Evento actualizado',
         'evento': {
