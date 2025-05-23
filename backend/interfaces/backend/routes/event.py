@@ -34,8 +34,7 @@ def get_user_events(user_id):
         {
             'nombre_evento': event.nombre_evento,
             'fecha_evento': event.fecha_evento.strftime('%Y-%m-%d %H:%M:%S'),  # Formatear la fecha a string
-            'user_id': event.user_id
-        }
+            'icon': event.icon,        }
         for event in events
     ]
 

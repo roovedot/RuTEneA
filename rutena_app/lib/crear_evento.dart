@@ -12,12 +12,25 @@ class CrearEventoPage extends StatefulWidget {
 
 class _CrearEventoPageState extends State<CrearEventoPage> {
   final TextEditingController nombreController = TextEditingController();
-  final TextEditingController fechaController = TextEditingController();
+  String? selectedEmoji;
 
   bool isLoading = false;
   String? errorMessage;
 
+  // Lista de emojis de ejemplo
+  final List<String> emojis = [
+    "😀", "😂", "😍", "👍", "🎉", "🥳", "🔥", "🐱", "🌟", "🚀",
+    // puedes añadir más...
+  ];
+
   Future<void> crearEvento() async {
+    if (selectedEmoji == null) {
+      setState(() {
+        errorMessage = 'Por favor, selecciona un emoji.';
+      });
+      return;
+    }
+
     setState(() {
       isLoading = true;
       errorMessage = null;
@@ -29,7 +42,7 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
     if (token == null) {
       setState(() {
         isLoading = false;
-        errorMessage = 'No se encontró token de autenticación. Por favor, inicia sesión.';
+        errorMessage = 'No se encontró token. Por favor, inicia sesión.';
       });
       return;
     }
@@ -44,7 +57,8 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
         },
         body: jsonEncode({
           'nombre_evento': nombreController.text.trim(),
-          'fecha_evento': fechaController.text.trim(),
+          'icon': selectedEmoji,
+          // no enviamos fecha_evento
         }),
       );
 
@@ -53,7 +67,6 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
       });
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Evento creado exitosamente, navega al dashboard
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
         setState(() {
@@ -63,7 +76,7 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
     } catch (e) {
       setState(() {
         isLoading = false;
-        errorMessage = 'Error en la conexión: $e';
+        errorMessage = 'Error de conexión: $e';
       });
     }
   }
@@ -71,8 +84,36 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
   @override
   void dispose() {
     nombreController.dispose();
-    fechaController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickEmoji() async {
+    final emoji = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) {
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+          ),
+          itemCount: emojis.length,
+          itemBuilder: (_, i) {
+            return GestureDetector(
+              onTap: () => Navigator.pop(context, emojis[i]),
+              child: Center(child: Text(emojis[i], style: const TextStyle(fontSize: 24))),
+            );
+          },
+        );
+      },
+    );
+
+    if (emoji != null) {
+      setState(() {
+        selectedEmoji = emoji;
+      });
+    }
   }
 
   @override
@@ -85,17 +126,12 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Logo vuelve al dashboard
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/dashboard');
-                  },
+                  onTap: () => Navigator.pushReplacementNamed(context, '/dashboard'),
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 48.0),
-                    child: Image.asset(
-                      'assets/logo.png',
-                      width: 100,
-                      height: 100,
-                    ),
+                    child: Image.asset('assets/logo.png', width: 100, height: 100),
                   ),
                 ),
 
@@ -109,8 +145,9 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Nombre
                       const Text(
-                        'Nombre',
+                        'Nombre del Evento',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           color: Colors.black87,
@@ -130,28 +167,50 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
                       ),
                       const SizedBox(height: 16),
 
+                      // Selector de Emoji
                       const Text(
-                        'Fecha (YYYY-MM-DD)',
+                        'Icono (Emoji)',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           color: Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      TextField(
-                        controller: fechaController,
-                        decoration: InputDecoration(
-                          hintText: '2004-11-09',
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                selectedEmoji ?? 'Ninguno seleccionado',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: selectedEmoji == null ? Colors.grey : Colors.black87,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          ElevatedButton(
+                            onPressed: _pickEmoji,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                            child: const Text('Elegir'),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
 
+                      // Mensaje de error
                       if (errorMessage != null)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -162,6 +221,7 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
                           ),
                         ),
 
+                      // Botón Crear Evento
                       ElevatedButton(
                         onPressed: isLoading ? null : crearEvento,
                         style: ElevatedButton.styleFrom(
@@ -172,9 +232,7 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
                           ),
                         ),
                         child: isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
+                            ? const CircularProgressIndicator(color: Colors.white)
                             : const Text(
                                 'Crear Evento',
                                 style: TextStyle(

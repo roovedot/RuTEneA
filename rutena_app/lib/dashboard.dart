@@ -1,24 +1,147 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
-class Dashboard extends StatelessWidget {
+// Modelo de Evento
+class Evento {
+  final String nombreEvento;
+  final String icon;
+  final DateTime fechaEvento;
+
+  Evento({
+    required this.nombreEvento,
+    required this.icon,
+    required this.fechaEvento,
+  });
+
+  factory Evento.fromJson(Map<String, dynamic> json) {
+    return Evento(
+      nombreEvento: json['nombre_evento'],
+      icon: json['icon'],
+      fechaEvento: DateTime.parse(json['fecha_evento']),
+    );
+  }
+}
+
+class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
   @override
+  _DashboardState createState() => _DashboardState();
+}
+
+class _DashboardState extends State<Dashboard> {
+  List<Evento> allEvents = [];
+  bool isLoading = false;
+  String? errorMessage;
+  late DateTime selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    // Normalizar a fecha sin hora
+    selectedDate = DateTime(now.year, now.month, now.day);
+    _loadEvents();
+  }
+
+  Future<void> _loadEvents() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null) {
+      setState(() {
+        isLoading = false;
+        errorMessage = 'No se encontró token. Inicia sesión.';
+      });
+      return;
+    }
+
+    final url = Uri.parse('http://127.0.0.1:5000/event/events');
+    try {
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        final events = data.map((e) => Evento.fromJson(e)).toList();
+        setState(() {
+          allEvents = events;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+          errorMessage = 'Error al cargar eventos: ${response.body}';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        errorMessage = 'Error de conexión: $e';
+      });
+    }
+  }
+
+  List<Evento> get _eventsForSelectedDate {
+    final fmt = DateFormat('yyyy-MM-dd');
+    final sel = fmt.format(selectedDate);
+    return allEvents.where((e) => fmt.format(e.fechaEvento) == sel).toList();
+  }
+
+  Future<void> _pickDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        selectedDate = DateTime(picked.year, picked.month, picked.day);
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final isToday = selectedDate.year == today.year &&
+        selectedDate.month == today.month &&
+        selectedDate.day == today.day;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            // Header con logo y botón
             _buildHeader(context),
-            
-            // Lista de eventos
+            _buildDateSelector(isToday),
+
+            // Lista dinámica
             Expanded(
-              child: _buildEventsList(context),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : errorMessage != null
+                      ? Center(child: Text(errorMessage!))
+                      : _eventsForSelectedDate.isEmpty
+                          ? Center(
+                              child: Text(
+                                'No hay eventos para ${DateFormat('yyyy-MM-dd').format(selectedDate)}',
+                              ),
+                            )
+                          : _buildEventsList(_eventsForSelectedDate),
             ),
-            
-            // Botón Cerrar Sesión
+
             _buildLogoutButton(context),
           ],
         ),
@@ -35,7 +158,6 @@ class Dashboard extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Logo RuTEnA
               Container(
                 width: 60,
                 height: 60,
@@ -46,17 +168,13 @@ class Dashboard extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.asset(
-                    'assets/logo.png', // Ajusta el nombre de tu archivo
+                    'assets/logo.png',
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
-              
-              // Botón Crear Evento
               ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/crearEvento');
-                },
+                onPressed: () => Navigator.pushNamed(context, '/crearEvento'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   padding: const EdgeInsets.symmetric(
@@ -82,119 +200,135 @@ class Dashboard extends StatelessWidget {
     );
   }
 
+  Widget _buildDateSelector(bool isToday) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_left),
+            onPressed: () {
+              setState(() {
+                selectedDate = selectedDate.subtract(const Duration(days: 1));
+              });
+            },
+          ),
+          TextButton(
+            onPressed: _pickDate,
+            child: Text(
+              DateFormat('yyyy-MM-dd').format(selectedDate),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.arrow_right),
+            onPressed: isToday
+                ? null
+                : () {
+                    setState(() {
+                      selectedDate = selectedDate.add(const Duration(days: 1));
+                    });
+                  },
+          ),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildEventsList(BuildContext context) {
+  Widget _buildEventsList(List<Evento> events) {
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 600), // Limita el ancho máximo
-        child: ListView(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          children: [
-            _buildEventItem(
-              time: "8:00",
-              icon: "🥐",
-              title: "Desayunar",
-              color: Colors.green[100]!,
-            ),
-            _buildTimelineDivider(),
-            _buildEventItem(
-              time: "10:00",
-              icon: "⚽",
-              title: "Jugar al Fútbol",
-              color: Colors.purple[100]!,
-            ),
-            _buildTimelineDivider(),
-            _buildEventItem(
-              time: "14:30",
-              icon: "🍽️",
-              title: "Comer con la abuela",
-              color: Colors.red[100]!,
-            ),
-            _buildTimelineDivider(),
-            _buildEventItem(
-              time: "18:00",
-              icon: "🌳",
-              title: "Pasear por el campo",
-              color: Colors.blue[100]!,
-            ),
-          ],
+          itemCount: events.length * 2 - 1,
+          itemBuilder: (context, index) {
+            if (index.isEven) {
+              final event = events[index ~/ 2];
+              return _buildEventItem(
+                time: DateFormat.Hm().format(event.fechaEvento),
+                icon: event.icon,
+                title: event.nombreEvento,
+                color: Colors.blue[100]!,
+              );
+            } else {
+              return _buildTimelineDivider();
+            }
+          },
         ),
       ),
     );
   }
 
-
   Widget _buildEventItem({
-  required String time,
-  required String icon,
-  required String title,
-  required Color color,
-}) {
-  return Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // Hora
-      SizedBox(
-        width: 50,
-        child: Text(
-          time,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
+    required String time,
+    required String icon,
+    required String title,
+    required Color color,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 50,
+          child: Text(
+            time,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-      ),
-      
-      // Línea vertical
-      Container(
-        width: 2,
-        height: 100, // Reducido para no ocupar tanto espacio
-        color: Colors.grey[300],
-      ),
-      
-      // Tarjeta del evento
-      Expanded(
-        child: Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxHeight: 120, // Altura máxima fija
-              maxWidth: 120, // Ancho máximo fijo
-            ),
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      icon,
-                      style: const TextStyle(fontSize: 28), // Reducido un poco
-                    ),
-                    const SizedBox(height: 8), // Reducido el espaciado
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 14, // Reducido un poco
-                        fontWeight: FontWeight.w500,
+        Container(
+          width: 2,
+          height: 100,
+          color: Colors.grey[300],
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxHeight: 120,
+                maxWidth: 120,
+              ),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        icon,
+                        style: const TextStyle(fontSize: 28),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
-      
-      const SizedBox(width: 50),
-    ],
-  );
-}
+        const SizedBox(width: 50),
+      ],
+    );
+  }
 
   Widget _buildTimelineDivider() {
     return Row(
@@ -218,7 +352,9 @@ class Dashboard extends StatelessWidget {
           child: SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('jwt_token');
                 Navigator.pushReplacementNamed(context, '/login');
               },
               style: ElevatedButton.styleFrom(
@@ -241,5 +377,4 @@ class Dashboard extends StatelessWidget {
       ),
     );
   }
-
 }
