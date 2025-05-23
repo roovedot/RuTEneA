@@ -59,15 +59,10 @@ def get_event(user_id, event_id):
 @token_required
 def create_event(user_id):
     data = request.get_json()
-    if not data or 'nombre_evento' not in data or 'fecha_evento' not in data:
+    if not data or 'nombre_evento' not in data or 'icon' not in data:
         return jsonify({'message': 'Datos inválidos o incompletos'}), 400
 
-    try:
-        # Intentar convertir la fecha al formato correcto (YYYY-MM-DD)
-        fecha_evento = datetime.strptime(data['fecha_evento'], '%Y-%m-%d')
-    except ValueError:
-        return jsonify({'message': 'Formato de fecha incorrecto, debe ser YYYY-MM-DD'}), 400
-
+    fecha_evento = datetime.now()
 
     nuevo_evento = Event(
         nombre_evento=data['nombre_evento'],
@@ -83,7 +78,7 @@ def create_event(user_id):
         'message': 'Evento creado',
         'evento': {
             'nombre_evento': nuevo_evento.nombre_evento,
-            'fecha_evento': nuevo_evento.fecha_evento,
+            'fecha_evento': nuevo_evento.fecha_evento.strftime('%Y-%m-%d %H:%M'),
             'icon' : nuevo_evento.icon,
             'user_id': nuevo_evento.user_id
         }
