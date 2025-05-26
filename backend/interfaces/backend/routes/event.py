@@ -34,7 +34,9 @@ def get_user_events(user_id):
         {
             'nombre_evento': event.nombre_evento,
             'fecha_evento': event.fecha_evento.strftime('%Y-%m-%d %H:%M:%S'),  # Formatear la fecha a string
-            'icon': event.icon,        }
+            'icon': event.icon,
+            'descripcion': event.descripcion,        
+        }
         for event in events
     ]
 
@@ -66,6 +68,7 @@ def create_event(user_id):
     nuevo_evento = Event(
         nombre_evento=data['nombre_evento'],
         icon=data['icon'],
+        descripcion=data['descripcion'],
         fecha_evento=fecha_evento,
         user_id=user_id  # Usar el user_id del token
     )
@@ -79,6 +82,7 @@ def create_event(user_id):
             'nombre_evento': nuevo_evento.nombre_evento,
             'fecha_evento': nuevo_evento.fecha_evento.strftime('%Y-%m-%d %H:%M'),
             'icon' : nuevo_evento.icon,
+            'descripcion': nuevo_evento.descripcion,
             'user_id': nuevo_evento.user_id
         }
     }), 201

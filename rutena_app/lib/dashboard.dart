@@ -9,11 +9,13 @@ class Evento {
   final String nombreEvento;
   final String icon;
   final DateTime fechaEvento;
+  final String? descripcion;
 
   Evento({
     required this.nombreEvento,
     required this.icon,
     required this.fechaEvento,
+    this.descripcion,
   });
 
   factory Evento.fromJson(Map<String, dynamic> json) {
@@ -21,6 +23,7 @@ class Evento {
       nombreEvento: json['nombre_evento'],
       icon: json['icon'],
       fechaEvento: DateTime.parse(json['fecha_evento']),
+      descripcion: json['descripcion'],
     );
   }
 }
@@ -42,7 +45,6 @@ class _DashboardState extends State<Dashboard> {
   void initState() {
     super.initState();
     final now = DateTime.now();
-    // Normalizar a fecha sin hora
     selectedDate = DateTime(now.year, now.month, now.day);
     _loadEvents();
   }
@@ -55,7 +57,6 @@ class _DashboardState extends State<Dashboard> {
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-
     if (token == null) {
       setState(() {
         isLoading = false;
@@ -63,14 +64,9 @@ class _DashboardState extends State<Dashboard> {
       });
       return;
     }
-
     final url = Uri.parse('http://127.0.0.1:5000/event/events');
     try {
-      final response = await http.get(
-        url,
-        headers: {'Authorization': 'Bearer $token'},
-      );
-
+      final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         final events = data.map((e) => Evento.fromJson(e)).toList();
@@ -112,6 +108,36 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
+  void _showEventDetail(Evento event) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(event.icon, style: const TextStyle(fontSize: 48)),
+              const SizedBox(height: 16),
+              Text(event.nombreEvento, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              Text(DateFormat('yyyy-MM-dd HH:mm').format(event.fechaEvento), style: const TextStyle(fontSize: 16, color: Colors.grey), textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              if (event.descripcion != null)
+                Text(event.descripcion!, style: const TextStyle(fontSize: 16), textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cerrar'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
@@ -126,8 +152,6 @@ class _DashboardState extends State<Dashboard> {
           children: [
             _buildHeader(context),
             _buildDateSelector(isToday),
-
-            // Lista dinámica
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -135,13 +159,10 @@ class _DashboardState extends State<Dashboard> {
                       ? Center(child: Text(errorMessage!))
                       : _eventsForSelectedDate.isEmpty
                           ? Center(
-                              child: Text(
-                                'No hay eventos para ${DateFormat('yyyy-MM-dd').format(selectedDate)}',
-                              ),
+                              child: Text('No hay eventos para ${DateFormat('yyyy-MM-dd').format(selectedDate)}'),
                             )
                           : _buildEventsList(_eventsForSelectedDate),
             ),
-
             _buildLogoutButton(context),
           ],
         ),
@@ -167,31 +188,17 @@ class _DashboardState extends State<Dashboard> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    'assets/logo.png',
-                    fit: BoxFit.cover,
-                  ),
+                  child: Image.asset('assets/logo.png', fit: BoxFit.cover),
                 ),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pushNamed(context, '/crearEvento'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text(
-                  'Crear Evento',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                child: const Text('Crear Evento', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
               ),
             ],
           ),
@@ -206,34 +213,13 @@ class _DashboardState extends State<Dashboard> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_left),
-            onPressed: () {
-              setState(() {
-                selectedDate = selectedDate.subtract(const Duration(days: 1));
-              });
-            },
-          ),
-          TextButton(
-            onPressed: _pickDate,
-            child: Text(
-              DateFormat('yyyy-MM-dd').format(selectedDate),
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.arrow_right),
-            onPressed: isToday
-                ? null
-                : () {
-                    setState(() {
-                      selectedDate = selectedDate.add(const Duration(days: 1));
-                    });
-                  },
-          ),
+          IconButton(icon: const Icon(Icons.arrow_left), onPressed: () {
+            setState(() => selectedDate = selectedDate.subtract(const Duration(days: 1)));
+          }),
+          TextButton(onPressed: _pickDate, child: Text(DateFormat('yyyy-MM-dd').format(selectedDate), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+          IconButton(icon: const Icon(Icons.arrow_right), onPressed: isToday ? null : () {
+            setState(() => selectedDate = selectedDate.add(const Duration(days: 1)));
+          }),
         ],
       ),
     );
@@ -243,81 +229,58 @@ class _DashboardState extends State<Dashboard> {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 600),
-        child: ListView.builder(
+        child: ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: events.length * 2 - 1,
-          itemBuilder: (context, index) {
-            if (index.isEven) {
-              final event = events[index ~/ 2];
-              return _buildEventItem(
+          itemCount: events.length,
+          separatorBuilder: (_, __) => _buildTimelineDivider(),
+          itemBuilder: (context, i) {
+            final event = events[i];
+            return GestureDetector(
+              onTap: () => _showEventDetail(event),
+              child: _buildEventItem(
                 time: DateFormat.Hm().format(event.fechaEvento),
                 icon: event.icon,
                 title: event.nombreEvento,
+                descripcion: event.descripcion ?? '',
                 color: Colors.blue[100]!,
-              );
-            } else {
-              return _buildTimelineDivider();
-            }
+              ),
+            );
           },
         ),
       ),
     );
   }
 
-  Widget _buildEventItem({
-    required String time,
-    required String icon,
-    required String title,
-    required Color color,
-  }) {
+  Widget _buildTimelineDivider() {
+    return Row(
+      children: [
+        const SizedBox(width: 50),
+        Container(width: 2, height: 20, color: Colors.grey[300]),
+      ],
+    );
+  }
+
+  Widget _buildEventItem({required String time, required String icon, required String title, required descripcion, required Color color}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 50,
-          child: Text(
-            time,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        Container(
-          width: 2,
-          height: 100,
-          color: Colors.grey[300],
-        ),
+        SizedBox(width: 50, child: Text(time, style: const TextStyle(fontWeight: FontWeight.bold))),
+        Container(width: 2, height: 100, color: Colors.grey[300]),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.only(left: 16),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxHeight: 120,
-                maxWidth: 120,
-              ),
+              constraints: const BoxConstraints(maxHeight: 120, maxWidth: 120),
               child: AspectRatio(
                 aspectRatio: 1,
                 child: Container(
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        icon,
-                        style: const TextStyle(fontSize: 28),
-                      ),
+                      Text(icon, style: const TextStyle(fontSize: 28)),
                       const SizedBox(height: 8),
-                      Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                     ],
                   ),
                 ),
@@ -326,19 +289,6 @@ class _DashboardState extends State<Dashboard> {
           ),
         ),
         const SizedBox(width: 50),
-      ],
-    );
-  }
-
-  Widget _buildTimelineDivider() {
-    return Row(
-      children: [
-        const SizedBox(width: 50),
-        Container(
-          width: 2,
-          height: 20,
-          color: Colors.grey[300],
-        ),
       ],
     );
   }
@@ -357,20 +307,8 @@ class _DashboardState extends State<Dashboard> {
                 await prefs.remove('jwt_token');
                 Navigator.pushReplacementNamed(context, '/login');
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[300],
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Cerrar Sesión',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[300], padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              child: const Text('Cerrar Sesión', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
             ),
           ),
         ),

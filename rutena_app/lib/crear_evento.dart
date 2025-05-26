@@ -13,6 +13,7 @@ class CrearEventoPage extends StatefulWidget {
 class _CrearEventoPageState extends State<CrearEventoPage> {
   final TextEditingController nombreController = TextEditingController();
   String? selectedEmoji;
+  final TextEditingController descripcionController = TextEditingController();
 
   bool isLoading = false;
   String? errorMessage;
@@ -58,7 +59,7 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
         body: jsonEncode({
           'nombre_evento': nombreController.text.trim(),
           'icon': selectedEmoji,
-          // no enviamos fecha_evento
+          'descripcion': descripcionController.text.trim(), 
         }),
       );
 
@@ -84,6 +85,7 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
   @override
   void dispose() {
     nombreController.dispose();
+    descripcionController.dispose();
     super.dispose();
   }
 
@@ -209,6 +211,31 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
                         ],
                       ),
                       const SizedBox(height: 16),
+
+                      // Descripción
+                      const Text(
+                        'Descripción',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: descripcionController,            // ← aquí
+                        maxLines: 3,                                  // permitir varias líneas
+                        decoration: InputDecoration(
+                          hintText: 'Escribe una descripción...',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
 
                       // Mensaje de error
                       if (errorMessage != null)
