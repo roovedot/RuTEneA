@@ -3,12 +3,13 @@ from flask_sqlalchemy import SQLAlchemy
 from routes.auth import auth_bp
 from routes.user import user_bp
 from routes.event import event_bp
+from flask_cors import CORS   
 from middleware.jwt import SECRET_KEY
 from db import db
 from flask_migrate import Migrate
 
 app = Flask(__name__)
-
+CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mi_base_de_datos.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = SECRET_KEY

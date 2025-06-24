@@ -24,6 +24,17 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
     // puedes añadir más...
   ];
 
+  final List<String> emociones = [
+  'Feliz',
+  'Triste',
+  'Ansioso',
+  'Emocionado',
+  'Enojado',
+  'Relajado',
+];
+String? selectedEmocion;
+
+
   Future<void> crearEvento() async {
     if (selectedEmoji == null) {
       setState(() {
@@ -31,6 +42,13 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
       });
       return;
     }
+    if (selectedEmocion == null) {
+  setState(() {
+    errorMessage = 'Por favor, selecciona una emoción.';
+  });
+  return;
+}
+
 
     setState(() {
       isLoading = true;
@@ -57,10 +75,11 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
-          'nombre_evento': nombreController.text.trim(),
-          'icon': selectedEmoji,
-          'descripcion': descripcionController.text.trim(), 
-        }),
+        'nombre_evento': nombreController.text.trim(),
+        'icon': selectedEmoji,
+        'descripcion': descripcionController.text.trim(),
+        'estado_emocional': selectedEmocion, // ← aquí
+      }),
       );
 
       setState(() {
@@ -214,18 +233,16 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
 
                       // Descripción
                       const Text(
-                        'Descripción',
+                        'Estado emocional',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           color: Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      TextField(
-                        controller: descripcionController,            // ← aquí
-                        maxLines: 3,                                  // permitir varias líneas
+                      DropdownButtonFormField<String>(
+                        value: selectedEmocion,
                         decoration: InputDecoration(
-                          hintText: 'Escribe una descripción...',
                           filled: true,
                           fillColor: Colors.white,
                           border: OutlineInputBorder(
@@ -233,9 +250,20 @@ class _CrearEventoPageState extends State<CrearEventoPage> {
                             borderSide: BorderSide.none,
                           ),
                         ),
+                        hint: const Text('Selecciona una emoción'),
+                        items: emociones.map((emocion) {
+                          return DropdownMenuItem<String>(
+                            value: emocion,
+                            child: Text(emocion),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedEmocion = value;
+                          });
+                        },
                       ),
                       const SizedBox(height: 16),
-
 
                       // Mensaje de error
                       if (errorMessage != null)

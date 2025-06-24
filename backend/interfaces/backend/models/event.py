@@ -6,6 +6,7 @@ class Event(db.Model):
     icon = db.Column(db.String(5))
     fecha_evento = db.Column(db.DateTime, nullable=False)
     descripcion = db.Column(db.String(500), nullable=True)
+    estado_emocional = db.Column(db.String(100), nullable=True)  # NUEVO CAMPO
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('events', lazy=True))
 

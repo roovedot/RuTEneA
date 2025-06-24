@@ -10,12 +10,14 @@ class Evento {
   final String icon;
   final DateTime fechaEvento;
   final String? descripcion;
+  final String? estadoEmocional; // ← NUEVO
 
   Evento({
     required this.nombreEvento,
     required this.icon,
     required this.fechaEvento,
     this.descripcion,
+    this.estadoEmocional,
   });
 
   factory Evento.fromJson(Map<String, dynamic> json) {
@@ -24,9 +26,11 @@ class Evento {
       icon: json['icon'],
       fechaEvento: DateTime.parse(json['fecha_evento']),
       descripcion: json['descripcion'],
+      estadoEmocional: json['estado_emocional'], // ← NUEVO
     );
   }
 }
+
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -108,35 +112,51 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-  void _showEventDetail(Evento event) {
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(event.icon, style: const TextStyle(fontSize: 48)),
-              const SizedBox(height: 16),
-              Text(event.nombreEvento, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-              const SizedBox(height: 8),
-              Text(DateFormat('yyyy-MM-dd HH:mm').format(event.fechaEvento), style: const TextStyle(fontSize: 16, color: Colors.grey), textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              if (event.descripcion != null)
-                Text(event.descripcion!, style: const TextStyle(fontSize: 16), textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cerrar'),
+void _showEventDetail(Evento event) {
+  showDialog(
+    context: context,
+    builder: (_) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(event.icon, style: const TextStyle(fontSize: 48)),
+            const SizedBox(height: 16),
+            Text(event.nombreEvento,
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            Text(DateFormat('yyyy-MM-dd HH:mm').format(event.fechaEvento),
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            if (event.descripcion != null)
+              Text(event.descripcion!,
+                  style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            if (event.estadoEmocional != null && event.estadoEmocional!.isNotEmpty)
+              Column(
+                children: [
+                  const Text('Estado emocional:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(event.estadoEmocional!, style: const TextStyle(fontSize: 16)),
+                  const SizedBox(height: 24),
+                ],
               ),
-            ],
-          ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cerrar'),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {

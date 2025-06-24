@@ -15,7 +15,9 @@ def get_events(user_id):
         {
             'nombre_evento': event.nombre_evento,
             'fecha_evento': event.fecha_evento.strftime('%Y-%m-%d %H:%M:%S'), 
-            'user_id': event.user_id
+            'user_id': event.user_id,
+            'descripcion': event.descripcion,
+            'estado_emocional': event.estado_emocional 
         }
         for event in events
     ]
@@ -35,7 +37,8 @@ def get_user_events(user_id):
             'nombre_evento': event.nombre_evento,
             'fecha_evento': event.fecha_evento.strftime('%Y-%m-%d %H:%M:%S'),  # Formatear la fecha a string
             'icon': event.icon,
-            'descripcion': event.descripcion,        
+            'descripcion': event.descripcion,   
+            'estado_emocional': event.estado_emocional     
         }
         for event in events
     ]
@@ -66,12 +69,14 @@ def create_event(user_id):
     fecha_evento = datetime.now()
 
     nuevo_evento = Event(
-        nombre_evento=data['nombre_evento'],
-        icon=data['icon'],
-        descripcion=data['descripcion'],
-        fecha_evento=fecha_evento,
-        user_id=user_id  # Usar el user_id del token
-    )
+    nombre_evento=data['nombre_evento'],
+    icon=data['icon'],
+    descripcion=data.get('descripcion'),
+    estado_emocional=data.get('estado_emocional'),  # NUEVO
+    fecha_evento=fecha_evento,
+    user_id=user_id
+)
+
 
     db.session.add(nuevo_evento)
     db.session.commit()
@@ -102,6 +107,9 @@ def update_event(user_id, event_id):
         event.nombre_evento = data['nombre_evento']
     if 'fecha_evento' in data:
         event.fecha_evento = data['fecha_evento']
+
+    if 'estado_emocional' in data:
+        event.estado_emocional = data['estado_emocional']
 
     db.session.commit()
 
