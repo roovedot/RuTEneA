@@ -233,6 +233,30 @@ String? selectedEmocion;
 
                       // Descripción
                       const Text(
+                        'Descripción',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: descripcionController,            
+                        maxLines: 3,                                  
+                        decoration: InputDecoration(
+                          hintText: 'Escribe una descripción...',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Estado emocional
+                      const Text(
                         'Estado emocional',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
