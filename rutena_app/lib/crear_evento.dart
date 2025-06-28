@@ -147,6 +147,20 @@ String? selectedEmocion;
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                //Botón de ayuda
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/ayuda');
+                  },
+                  icon: const Icon(Icons.help_outline, color: Colors.white),
+                  label: const Text('Ayuda', style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+
                 // Logo vuelve al dashboard
                 GestureDetector(
                   onTap: () => Navigator.pushReplacementNamed(context, '/dashboard'),

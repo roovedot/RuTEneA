@@ -3,6 +3,7 @@ import 'package:rutena_app/dashboard.dart';
 import 'package:rutena_app/login.dart';
 import 'package:rutena_app/register.dart';
 import 'package:rutena_app/crear_evento.dart';
+import 'package:rutena_app/ayuda.dart';
 
 void main() {
   runApp(const MainApp());
@@ -25,6 +26,7 @@ class MainApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/crearEvento': (context) => const CrearEventoPage(),
+        '/ayuda': (context) => const AyudaPage(),
       },
     );
   }

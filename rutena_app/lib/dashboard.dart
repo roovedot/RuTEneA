@@ -211,6 +211,21 @@ void _showEventDetail(Evento event) {
                   child: Image.asset('assets/logo.png', fit: BoxFit.cover),
                 ),
               ),
+
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/ayuda');
+                },
+                icon: const Icon(Icons.help_outline, color: Colors.white),
+                label: const Text('Ayuda', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+
+
               ElevatedButton(
                 onPressed: () => Navigator.pushNamed(context, '/crearEvento'),
                 style: ElevatedButton.styleFrom(
